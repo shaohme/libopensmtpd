@@ -14,6 +14,7 @@ osmtpd_register_filter_noop
 osmtpd_register_filter_help
 osmtpd_register_filter_wiz
 osmtpd_register_filter_commit
+osmtpd_register_report_auth
 osmtpd_register_report_connect
 osmtpd_register_report_disconnect
 osmtpd_register_report_identify

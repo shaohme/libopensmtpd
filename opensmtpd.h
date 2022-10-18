@@ -13,6 +13,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include <stdint.h>
 #include <sys/socket.h>
 
 #ifndef __dead
@@ -49,6 +50,7 @@ enum osmtpd_phase {
 	OSMTPD_PHASE_HELP,
 	OSMTPD_PHASE_WIZ,
 	OSMTPD_PHASE_COMMIT,
+	OSMTPD_PHASE_LINK_AUTH,
 	OSMTPD_PHASE_LINK_CONNECT,
 	OSMTPD_PHASE_LINK_DISCONNECT,
 	OSMTPD_PHASE_LINK_GREETING,
@@ -65,6 +67,12 @@ enum osmtpd_phase {
 	OSMTPD_PHASE_PROTOCOL_SERVER,
 	OSMTPD_PHASE_FILTER_RESPONSE,
 	OSMTPD_PHASE_TIMEOUT
+};
+
+enum osmtpd_auth_result {
+	OSMTPD_AUTH_PASS,
+	OSMTPD_AUTH_FAIL,
+	OSMTPD_AUTH_ERROR
 };
 
 #define OSMTPD_NEED_SRC 1 << 0
@@ -156,6 +164,8 @@ void osmtpd_register_report_server(int, void (*)(struct osmtpd_ctx *,
 void osmtpd_register_report_response(int, void (*)(struct osmtpd_ctx *,
     const char *));
 void osmtpd_register_report_timeout(int, void (*)(struct osmtpd_ctx *));
+void osmtpd_register_report_auth(int, void (*)(struct osmtpd_ctx *,
+    const char *, enum osmtpd_auth_result));
 void osmtpd_local_session(void *(*)(struct osmtpd_ctx *),
     void (*)(struct osmtpd_ctx *, void *));
 void osmtpd_local_message(void *(*)(struct osmtpd_ctx *),

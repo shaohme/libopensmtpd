@@ -72,6 +72,8 @@ static void osmtpd_connect(struct osmtpd_callback *, struct osmtpd_ctx *,
     char *, char *);
 static void osmtpd_identify(struct osmtpd_callback *, struct osmtpd_ctx *,
     char *, char *);
+static void osmtpd_link_auth(struct osmtpd_callback *, struct osmtpd_ctx *,
+    char *, char *);
 static void osmtpd_link_connect(struct osmtpd_callback *, struct osmtpd_ctx *,
     char *, char *);
 static void osmtpd_link_disconnect(struct osmtpd_callback *,
@@ -237,6 +239,15 @@ static struct osmtpd_callback osmtpd_callbacks[] = {
 	    OSMTPD_PHASE_COMMIT,
 	    1,
 	    osmtpd_noargs,
+	    NULL,
+	    0,
+	    0
+	},
+  	{
+	    OSMTPD_TYPE_REPORT,
+	    OSMTPD_PHASE_LINK_AUTH,
+	    1,
+	    osmtpd_link_auth,
 	    NULL,
 	    0,
 	    0
@@ -830,6 +841,16 @@ osmtpd_register_report_timeout(int incoming, void (*cb)(struct osmtpd_ctx *))
 }
 
 void
+osmtpd_register_report_auth(int incoming, void (*cb)(struct osmtpd_ctx *,
+    const char * username, enum osmtpd_auth_result))
+{
+	osmtpd_register(OSMTPD_TYPE_REPORT, OSMTPD_PHASE_LINK_AUTH,
+	    incoming, 0, (void *)cb);
+	osmtpd_register(OSMTPD_TYPE_REPORT, OSMTPD_PHASE_LINK_DISCONNECT,
+	    incoming, 0, NULL);
+}
+
+void
 osmtpd_local_session(void *(*oncreate)(struct osmtpd_ctx *),
     void (*ondelete)(struct osmtpd_ctx *, void *))
 {
@@ -1265,6 +1286,34 @@ osmtpd_identify(struct osmtpd_callback *cb, struct osmtpd_ctx *ctx,
 
 	f = cb->cb;
 	f(ctx, identity);
+}
+
+static void
+osmtpd_link_auth(struct osmtpd_callback *cb, struct osmtpd_ctx *ctx,
+    char *params, char *linedup)
+{
+	enum osmtpd_auth_result auth_res;
+	char * username, *end;
+	void (*f)(struct osmtpd_ctx *, const char *, enum osmtpd_auth_result);
+
+	if ((end = strchr(params, '|')) == NULL)
+		osmtpd_errx(1, "Invalid line received: missing username: %s",
+		    linedup);
+	end++[0] = '\0';
+	username = params;
+	params = end;
+	if (strcmp(params, "pass") == 0)
+		auth_res = OSMTPD_AUTH_PASS;
+	else if (strcmp(params, "fail") == 0)
+		auth_res = OSMTPD_AUTH_FAIL;
+	else if (strcmp(params, "error") == 0)
+		auth_res = OSMTPD_AUTH_ERROR;
+	else
+		osmtpd_errx(1, "Invalid line received: invalid result: %s",
+		    linedup);
+
+	if ((f = cb->cb) != NULL)
+		f(ctx, username, auth_res);
 }
 
 static void
@@ -1870,6 +1919,8 @@ osmtpd_strtophase(const char *phase, const char *linedup)
 		return OSMTPD_PHASE_WIZ;
 	if (strcmp(phase, "commit") == 0)
 		return OSMTPD_PHASE_COMMIT;
+	if (strcmp(phase, "link-auth") == 0)
+		return OSMTPD_PHASE_LINK_AUTH;
 	if (strcmp(phase, "link-connect") == 0)
 		return OSMTPD_PHASE_LINK_CONNECT;
 	if (strcmp(phase, "link-disconnect") == 0)
@@ -1951,6 +2002,8 @@ osmtpd_phasetostr(enum osmtpd_phase phase)
 		return "wiz";
 	case OSMTPD_PHASE_COMMIT:
 		return "commit";
+	case OSMTPD_PHASE_LINK_AUTH:
+		return "link-auth";
 	case OSMTPD_PHASE_LINK_CONNECT:
 		return "link-connect";
 	case OSMTPD_PHASE_LINK_DISCONNECT:

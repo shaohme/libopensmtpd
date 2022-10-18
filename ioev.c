@@ -102,9 +102,9 @@ static struct io	*current = NULL;
 static uint64_t		 frame = 0;
 static int		_io_debug = 0;
 
-//#define io_debug(args...) do { if (_io_debug) printf(args); } while(0)
+#define io_debug(args...) do { if (_io_debug) printf(args); } while(0)
 
-#define io_debug(args...) do { fprintf(stderr, args); } while(0)
+// #define io_debug(args...) do { fprintf(stderr, args); } while(0)
 
 const char*
 io_strio(struct io *io)
