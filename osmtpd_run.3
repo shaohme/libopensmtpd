@@ -1,0 +1,513 @@
+.\" $OpenBSD$
+.\"
+.\" Copyright (c) 2019 Martijn van Duren <martijn@openbsd.org>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt OSMTPD_RUN 3
+.Os
+.Sh NAME
+.Nm osmtpd_register_filter_connect ,
+.Nm osmtpd_register_filter_helo ,
+.Nm osmtpd_register_filter_ehlo ,
+.Nm osmtpd_register_filter_starttls ,
+.Nm osmtpd_register_filter_auth ,
+.Nm osmtpd_register_filter_mailfrom ,
+.Nm osmtpd_register_filter_rcptto ,
+.Nm osmtpd_register_filter_data ,
+.Nm osmtpd_register_filter_dataline ,
+.Nm osmtpd_register_filter_rset ,
+.Nm osmtpd_register_filter_quit ,
+.Nm osmtpd_register_filter_noop ,
+.Nm osmtpd_register_filter_help ,
+.Nm osmtpd_register_filter_wiz ,
+.Nm osmtpd_register_filter_commit ,
+.Nm osmtpd_register_report_connect ,
+.Nm osmtpd_register_report_disconnect ,
+.Nm osmtpd_register_report_identify ,
+.Nm osmtpd_register_report_tls ,
+.Nm osmtpd_register_report_begin ,
+.Nm osmtpd_register_report_mail ,
+.Nm osmtpd_register_report_rcpt ,
+.Nm osmtpd_register_report_envelope ,
+.Nm osmtpd_register_report_data ,
+.Nm osmtpd_register_report_commit ,
+.Nm osmtpd_register_report_rollback ,
+.Nm osmtpd_register_report_client ,
+.Nm osmtpd_register_report_server ,
+.Nm osmtpd_register_report_response ,
+.Nm osmtpd_register_report_timeout ,
+.Nm osmtpd_local_session ,
+.Nm osmtpd_local_message ,
+.Nm osmtpd_need ,
+.Nm osmtpd_filter_proceed ,
+.Nm osmtpd_filter_reject ,
+.Nm osmtpd_filter_disconnect ,
+.Nm osmtpd_filter_rewrite ,
+.Nm osmtpd_filter_dataline ,
+.Nm osmtpd_run ,
+.Nm osmtpd_err ,
+.Nm osmtpd_errx
+.Nd C filter API for
+.Xr smtpd 8
+.Sh SYNOPSIS
+.In opensmtpd.h
+.Ft void
+.Fo osmtpd_register_filter_connect
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *hostname, struct sockaddr_storage *ss)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_helo
+.Fa "void (cb*)(struct osmtpd_ctx *ctx, const char *helo)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_ehlo
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *ehlo)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_starttls
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_auth
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *auth)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_mailfrom
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *from)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_rcptto
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *rcpt)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_data
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_dataline
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *line)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_rset
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_quit
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_noop
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_help
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_wiz
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_filter_commit
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_connect
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *rdns, enum osmtpd_status fcrdns, struct sockaddr_storage *src, struct sockaddr_storage *dst)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_disconnect
+.Fa "int incoming"
+.Fa "void (*ctx)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_identify
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *identity)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_tls
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *ciphers)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_begin
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, uint32_t msgid)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_mail
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, uint32_t msgid, const char *mailfrom, enum osmtpd_status status)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_rcpt
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, uint32_t msgid, const char *rcptto, enum osmtpd_status status)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_envelope
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, uint32_t msgid, uint64_t evpid)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_data
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, uint32_t msgid, enum osmtpd_status status)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_commit
+.Fa int incoming
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, uint32_t msgid, size_t msgsz)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_rollback
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, uint32_t msgid)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_client
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *cmd)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_server
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *resp)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_response
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx, const char *resp)"
+.Fc
+.Ft void
+.Fo osmtpd_register_report_timeout
+.Fa "int incoming"
+.Fa "void (*cb)(struct osmtpd_ctx *ctx)"
+.Fc
+.Ft void
+.Fo osmtpd_local_session
+.Fa "void *(*oncreate)(struct osmtpd_ctx *ctx)"
+.Fa "void (*ondelete)(struct osmtpd_ctx *ctx, void *data)"
+.Fc
+.Ft void
+.Fo osmtpd_local_message
+.Fa "void *(*oncreate)(struct osmtpd_ctx *ctx)"
+.Fa "void (*ondelete)(struct osmtpd_ctx *ctx, void *data)"
+.Fc
+.Ft void
+.Fn osmtpd_need "int needs"
+.Ft void
+.Fn osmtpd_filter_proceed "struct osmtpd_ctx *ctx"
+.Ft void
+.Fn osmtpd_filter_reject "struct osmtpd_ctx *ctx" "int error" "const char *msg" ...
+.Ft void
+.Fn osmtpd_filter_disconnect "struct osmtpd_ctx *ctx" "const char *msg" ...
+.Ft void
+.Fn osmtpd_filter_rewrite "struct osmtpd_ctx *ctx" "const char *value" ...
+.Ft void
+.Fn osmtpd_filter_dataline "struct osmtpd_ctx *ctx" "const char *line" ...
+.Ft void
+.Fn osmtpd_run void
+.Ft void
+.Fn osmtpd_err "int eval" "const char *fmt" ...
+.Ft void
+.Fn osmtpd_errx "int eval" "const char *fmt" ...
+.Sh DESCRIPTION
+The
+.Nm osmtpd
+API is an event based interface for writing
+.Xr smtpd 8
+filters.
+Filter and report callbacks are registered via the
+.Nm osmtpd_register
+class of functions, followed by
+.Nm osmtpd_run .
+.Pp
+.Nm osmtpd_run
+starts the communication with the server and transforms network queries to
+callbacks.
+Internally it uses
+.Xr event_dispatch 3 ,
+which allows filters to be written fully asynchronously.
+.Pp
+Each callback
+.Fa cb
+gets at least a pointer of the type
+.Fa struct osmtpd_ctx .
+It contains the following elements:
+.Bl -tag -width Ds
+.It Fa "enum osmtpd_type type"
+The type of request being made.
+The possible values are
+.Dv OSMTPD_TYPE_FILTER
+and
+.Dv OSMTPD_TYPE_REPORT .
+.It Vt "enum osmtpd_phase" Va phase
+The phase in the transaction which triggered the callback.
+The following values match their respective
+.Nm osmtpd_register
+function:
+.Bl -tag -compact -width OSMTPD_PHASE_LINK_DISCONNECT
+.It Dv OSMTPD_PHASE_CONNECT
+.Nm osmtpd_register_filter_connect
+.It Dv OSMTPD_PHASE_HELO
+.Nm osmtpd_register_filter_helo
+.It Dv OSMTPD_PHASE_EHLO
+.Nm osmtpd_register_filter_ehlo
+.It Dv OSMTPD_PHASE_STARTTLS
+.Nm osmtpd_register_filter_starttls
+.It Dv OSMTPD_PHASE_AUTH
+.Nm osmtpd_register_filter_auth
+.It Dv OSMTPD_PHASE_MAIL_FROM
+.Nm osmtpd_register_filter_mailfrom
+.It Dv OSMTPD_PHASE_RCPT_TO
+.Nm osmtpd_register_filter_rcptto
+.It Dv OSMTPD_PHASE_DATA
+.Nm osmtpd_register_filter_data
+.It Dv OSMTPD_PHASE_DATA_LINE
+.Nm osmtpd_register_filter_dataline
+.It Dv OSMTPD_PHASE_RSET
+.Nm osmtpd_register_filter_rset
+.It Dv OSMTPD_PHASE_QUIT
+.Nm osmtpd_register_filter_quit
+.It Dv OSMTPD_PHASE_NOOP
+.Nm osmtpd_register_filter_noop
+.It Dv OSMTPD_PHASE_HELP
+.Nm osmtpd_register_filter_help
+.It Dv OSMTPD_PHASE_WIZ
+.Nm osmtpd_register_filter_wiz
+.It Dv OSMTPD_PHASE_COMMIT
+.Nm osmtpd_register_filter_commit
+.It Dv OSMTPD_PHASE_LINK_CONNECT
+.Nm osmtpd_register_report_connect
+.It OSMTPD_PHASE_LINK_DISCONNECT
+.Nm osmtpd_register_report_disconnect
+.It Dv OSMTPD_PHASE_LINK_IDENTIFY
+.Nm osmtpd_register_report_identify
+.It Dv OSMTPD_PHASE_LINK_TLS
+.Nm osmtpd_register_report_tls
+.It Dv OSMTPD_PHASE_TX_BEGIN
+.Nm osmtpd_register_report_begin
+.It Dv OSMTPD_PHASE_TX_MAIL
+.Nm osmtpd_register_report_mail
+.It Dv OSMTPD_PHASE_TX_RCPT
+.Nm osmtpd_register_report_rcpt
+.It Dv OSMTPD_PHASE_TX_ENVELOPE
+.Nm osmtpd_register_report_envelope
+.It Dv OSMTPD_PHASE_TX_DATA
+.Nm osmtpd_register_report_data
+.It Dv OSMTPD_PHASE_TX_COMMIT
+.Nm osmtpd_register_report_commit
+.It Dv OSMTPD_PHASE_TX_ROLLBACK
+.Nm osmtpd_register_report_rollback
+.It Dv OSMTPD_PHASE_PROTOCOL_CLIENT
+.Nm osmtpd_register_report_client
+.It Dv OSMTPD_PHASE_PROTOCOL_SERVER
+.Nm osmtpd_register_report_server
+.It Dv OSMTPD_PHASE_FILTER_RESPONSE
+.Nm osmtpd_register_report_response
+.It Dv OSMTPD_PHASE_TIMEOUT .
+.Nm osmtpd_register_report_timeout
+.El
+.It Vt int Va version_major
+The major version number of the protocol.
+Most filters don't need this information.
+.It Vt int Va version_minor
+The minor version number of the protocol.
+Most filters don't need this information.
+.It Vt "struct timespec" Va tm
+The time the event was triggered inside
+.Xr smtpd 8 .
+.It Vt int Va incoming
+Set to 1 if the event was based on an incoming connection, 0 if it's an outgoing
+connection.
+The
+.Nm osmtpd_register_filter
+class of functions is always based on incoming connections.
+.Nm osmtpd_register_report
+can be both incoming and outgoing.
+.It Vt uint64_t Va reqid
+The request ID of the connection the event was issued on.
+This value can be useful for logging.
+Filters in need of filter specific data can use
+.Nm osmtpd_local_session
+and
+.Va local_session .
+.It Vt uint64_t Va token
+The filter specific token.
+Most filters don't need this information.
+.It Vt "struct sockaddr_storage" Va src
+The source address and port of the connection.
+This needs to be cast to the appropriate sockaddr type based on the
+.Va ss_family
+attribute.
+It can have the following families:
+.Dv AF_INET ,
+.Dv AF_INET6
+and
+.Dv AF_UNIX .
+To use this attribute, initialize
+.Nm osmtpd_need
+with
+.Dv OSMTPD_NEED_SRC .
+If not available the entire attribute is zeroed out.
+.It Vt "struct sockaddr_storage" Va dst
+The destination address and port of the connection.
+This needs to be cast to the appropriate sockaddr type based on the
+.Va ss_family
+attribute.
+It can have the following families:
+.Dv AF_INET ,
+.Dv AF_INET6
+and
+.Dv AF_UNIX .
+To use this attribute, initialize
+.Nm osmtpd_need
+with
+.Dv OSMTPD_NEED_DST .
+If not available the entire attribute is zeroed out.
+.It Vt char Va *rdns
+The reverse DNS hostname of the connection.
+To use this attribute, initialize
+.Nm osmtpd_need
+with
+.Dv OSMTPD_NEED_RDNS .
+If not available the attribute is set to
+.Dv NULL .
+.It Vt enum osmtpd_status Va fcrdns
+Whether the reverse DNS hostname is forward confirmed.
+To use this attribute, initialize
+.Nm osmtpd_need
+with
+.Dv OSMTPD_NEED_FCRDNS .
+If not available the attribute is set to
+.Dv OSMTPD_STATUS_TEMPFAIL .
+.It Vt char Va *identity
+The identity of the remote host as presented by the HELO or EHLO SMTP command.
+To use this attribute, initialize
+.Nm osmtpd_need
+with
+.Dv OSMTPD_NEED_IDENTITY .
+If not available the attribute is set to
+.Dv NULL .
+.It Vt char Va *ciphers
+The ciphers used during
+.Po start Pc Ns tls .
+To use this attribute, initialize
+.Nm osmtpd_need
+with
+.Dv OSMTPD_NEED_CIPHERS .
+If not available the attribute is set to
+.Dv NULL .
+.It Vt uint32_t Va msgid
+The message ID of the current message being handled in the SMTP transaction.
+This value can be useful for logging.
+.Nm osmtpd_need
+needs to be initialized with
+.Dv OSMTPD_NEED_MSGID .
+If not available the attribute is set to
+.Dv 0 .
+Filters in need of filter specific data can use
+.Nm osmtpd_local_message
+and
+.Va local_message .
+.It Vt char Va *mailfrom
+The envelope MAIL FROM address in the SMTP transaction.
+.Nm osmtpd_need
+needs to be initialized with
+.Dv OSMTPD_NEED_MAILFROM .
+If not available the attribute is set to
+.Dv NULL .
+.It Vt char Va **rcptto
+The envelope RCPT TO address in the SMTP transaction.
+.Nm osmtpd_need
+needs to be initialized with
+.Dv OSMTPD_NEED_RCPTTO .
+This attribute is a NULL-terminated array of address strings.
+If not available the first element in the array is set to
+.Dv NULL .
+.It Vt uint64_t Va evpid
+The envelope ID we're currently working on.
+.Nm osmtpd_need
+needs to be initialized with
+.Dv OSMTPD_NEED_EVPID .
+If not available the attribute is set to
+.Dv 0 .
+.It Vt void Va *local_session
+Any filter specific data that needs to be stored during the session.
+This is initialized on
+.Fa ctx
+creation by calling
+.Fa oncreate
+argument from
+.Nm osmtpd_local_session .
+.It Vt void Va *local_message
+Any filter specific data that needs to be stored during the message transaction.
+This is initialized on
+.Fa ctx
+creation by calling
+.Fa oncreate
+argument from
+.Nm osmtpd_local_message .
+.El
+.Pp
+The
+.Nm osmtpd_register_filter
+class of functions must call one of
+.Nm osmtpd_filter_proceed ,
+.Nm osmtpd_filter_rewrite ,
+.Nm osmtpd_filter_reject
+and
+.Nm osmtpd_filter_disconnect .
+This can be done either in the callback function itself, or at a later moment
+through another callback.
+Note that the session stalls until the
+.Nm osmtpd_filter
+has been called.
+.Pp
+Exceptions to the above reply options are:
+.Pp
+.Bl -bullet -compact -width Ds
+.It
+.Nm osmtpd_register_filter_connect Ns 's
+and
+.Nm osmtpd_register_filter
+functions' callbacks without argument can't use
+.Nm osmtpd_filter_rewrite .
+.It
+.Nm osmtpd_register_filter_dataline Ns 's
+callback can only use osmtpd_filter_dataline.
+.El
+.Pp
+.Nm osmtpd_err
+and
+.Nm osmtpd_errx
+can be used as a standin for
+.Xr err 3
+and
+.Xr errx 3
+without printing the program name to stderr.
+.Sh SEE ALSO
+.Xr event_init 3 ,
+.Xr smtpd.conf 5
+.Sh HISTORY
+The
+.Nm osmtpd_run
+API first appeared in
+.Ox 6.6 .
+.Sh AUTHORS
+.An Martijn van Duren Aq Mt martijn@openbsd.org
